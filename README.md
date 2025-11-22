@@ -24,29 +24,13 @@ An interactive Streamlit application for performing sentiment analysis on tweets
 
 5. Support Vector Machine (SVM) Model Training
 * Scenario 1 — 500 Best Features
-** SelectKBest with k=500
-** SVM model training
-** Saves model: svm_500.pkl and vectorizer
 * Scenario 2 — Best Performance
-** Iterative search for optimal number of features
-** Evaluation metric: weighted F1-score
-** Saves the best model: svm_best.pkl
-
-Includes:
-
-Classification report
-
-Confusion matrix (heatmap)
+* Classification report
+* Confusion matrix (heatmap)
 
 6. In-App Sentiment Prediction
-
-Users can input any text to get a sentiment prediction based on:
-
-Preprocessing
-
-TF-IDF transformation
-
-Feature selection
-
-SVM classification
-Output: Positive / Negative / Neutral
+* Preprocessing
+* TF-IDF transformation
+* Feature selection
+* SVM classification
+* Output: Positive / Negative / Neutral
