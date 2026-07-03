@@ -34,3 +34,14 @@ An interactive Streamlit application for performing sentiment analysis on tweets
 * Feature selection
 * SVM classification
 * Output: Positive / Negative / Neutral
+
+## Optional Xquik/TweetClaw Export Upload
+
+The Streamlit sidebar can load reviewed tweet exports from Xquik/TweetClaw
+before preprocessing. Upload a CSV, JSON, or JSONL file that includes one of
+these text columns: `full_text`, `tweetText`, `tweet_text`, `reply_text`,
+`replyText`, `text`, `content`, or `body`.
+
+This keeps `bbm.csv` as the default sample dataset while allowing fresh X
+(Twitter) exports to feed the same normalization, stemming, EDA, and SVM
+workflow.

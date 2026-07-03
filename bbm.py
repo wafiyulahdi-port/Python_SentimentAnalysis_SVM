@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -20,6 +22,65 @@ from PIL import Image
 # Set up the stemming factory
 factory = StemmerFactory()
 stemmer = factory.create_stemmer()
+
+TEXT_COLUMNS = (
+    "full_text",
+    "tweetText",
+    "tweet_text",
+    "reply_text",
+    "replyText",
+    "text",
+    "content",
+    "body",
+)
+
+
+def first_existing_column(dataframe, candidates):
+    for candidate in candidates:
+        if candidate in dataframe.columns:
+            return candidate
+    return None
+
+
+def records_from_json(payload):
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        for key in ("tweets", "data", "items", "results"):
+            records = payload.get(key)
+            if isinstance(records, list):
+                return records
+        return [payload]
+    raise ValueError("Uploaded JSON must contain an object or list of tweet records.")
+
+
+def normalize_tweetclaw_export(dataframe):
+    text_column = first_existing_column(dataframe, TEXT_COLUMNS)
+    if text_column is None:
+        raise ValueError(
+            "Uploaded export needs a tweet text column such as full_text, "
+            "tweetText, reply_text, replyText, text, content, or body."
+        )
+
+    normalized = dataframe.copy()
+    normalized["full_text"] = normalized[text_column].fillna("").astype(str).str.strip()
+    normalized = normalized[normalized["full_text"] != ""]
+    if normalized.empty:
+        raise ValueError("Uploaded export has no non-empty tweet text rows.")
+    return normalized.reset_index(drop=True)
+
+
+def read_tweetclaw_export(uploaded_file):
+    suffix = Path(uploaded_file.name).suffix.lower()
+    if suffix == ".csv":
+        uploaded = pd.read_csv(uploaded_file)
+    elif suffix == ".jsonl":
+        uploaded = pd.read_json(uploaded_file, lines=True)
+    elif suffix == ".json":
+        uploaded = pd.DataFrame(records_from_json(json.load(uploaded_file)))
+    else:
+        raise ValueError("Upload a CSV, JSON, or JSONL export.")
+    return normalize_tweetclaw_export(uploaded)
 
 st.markdown(
     """
@@ -182,12 +243,25 @@ key_norm = pd.read_csv('key_norm.csv')
 
 # Membaca file scrapped_data.csv
 file_path = os.path.join(os.getcwd(), 'bbm.csv')
+uploaded_export = st.sidebar.file_uploader(
+    "Upload Xquik or TweetClaw export",
+    type=("csv", "json", "jsonl"),
+)
 
-if os.path.exists(file_path):
-    df = pd.read_csv(file_path)
-    df = df[['full_text']]
-else:
-    st.error(f"File {file_path} tidak ditemukan.")
+try:
+    if uploaded_export is None:
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path)
+            df = df[['full_text']]
+        else:
+            st.error(f"File {file_path} tidak ditemukan.")
+            st.stop()
+    else:
+        df = read_tweetclaw_export(uploaded_export)
+        st.sidebar.success("Loaded reviewed Xquik/TweetClaw export")
+except (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError) as exc:
+    st.sidebar.error(str(exc))
+    st.stop()
 
 if menu == "Dashboard":
     st.title("ANALISIS SENTIMEN DENGAN ALGORITMA SUPPORT VECTOR MACHINE PADA TWEETS KUALITAS BBM DI PLATFORM X")
@@ -506,4 +580,3 @@ elif menu == "Model SVM":
 
     else:
         st.error("Silakan lakukan preprocessing terlebih dahulu.")
-
